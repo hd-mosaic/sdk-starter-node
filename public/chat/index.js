@@ -37,15 +37,33 @@ $(function() {
     $chatWindow.scrollTop($chatWindow[0].scrollHeight);
   }
 
+  function getParameterByName(name, url) {
+    if (!url) url = window.location.href;
+    name = name.replace(/[\[\]]/g, "\\$&");
+    var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+      results = regex.exec(url);
+    if (!results) return null;
+    if (!results[2]) return '';
+    return decodeURIComponent(results[2].replace(/\+/g, " "));
+  }
+  let cid = getParameterByName('cid');
+  let pid = getParameterByName('pid');
+  let channelId = getParameterByName('channelId');
+  console.log('cid = ', cid, ' pid = ', pid, ' channelId = ', channelId);
+
   // Alert the user they have been assigned a random username
   print('Logging in...');
 
   // Get an access token for the current user, passing a username (identity)
   // and a device ID - for browser-based apps, we'll always just use the
   // value "browser"
-  $.getJSON('/token', {
+  let data = {
     device: 'browser'
-  }, function(data) {
+  };
+  cid && (data.cid = cid);
+  pid && (data.pid = pid);
+  channelId && (data.channelId = channelId);
+  $.getJSON('/token', data, function(data) {
     // Alert the user they have been assigned a random username
     username = data.identity;
     print('You have been assigned a random username of: '
@@ -53,10 +71,13 @@ $(function() {
 
     // Initialize the Chat client
     chatClient = new Twilio.Chat.Client(data.token);
+    console.log('create client success');
     chatClient.getSubscribedChannels().then(createOrJoinGeneralChannel);
   });
 
-  function createOrJoinGeneralChannel() {
+  function createOrJoinGeneralChannel(paginator) {
+    console.log('getSubscribedChannels: ', paginator);
+
     // Get the general chat channel, which is where all the messages are
     // sent in this simple application
     print('Attempting to join "general" chat channel...');

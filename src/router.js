@@ -3,6 +3,10 @@ const Router = require('express').Router;
 const {registerBind, sendNotification} = require('./notification_handler');
 const tokenGenerator = require('./token_generator');
 const config = require('./config');
+const twilioUtil = require('./util/twilio-util');
+const Twilio = require('twilio').Twilio;
+const datasource = require('../db');
+const SERVER_MODULE = 'server';
 
 const router = new Router();
 
@@ -18,12 +22,34 @@ function camelCaseKeys(hashmap) {
 };
 
 router.get('/token', (req, res) => {
-  res.send(tokenGenerator());
+  let pid = req.params.pid;
+  let cid = req.params.cid;
+  let channelId = req.params.channelId;
+  let serverId;
+  let token;
+  tokenGenerator(pid).then((t) => {
+    token = t;
+    return twilioUtil.getService(cid);
+  }).then((sId) => {
+    serverId = sId;
+    return twilioUtil.getUser(pid);
+  }).then((userId) => {
+    if(userId) {
+      //
+    } else {
+      twilioUtil.createUser(pid, serverId);
+    }
+    res.send(token);
+  });
+  //res.send(tokenGenerator());
 });
 
 router.post('/token', (req, res) => {
   const identity = req.body.identity;
-  res.send(tokenGenerator(identity));
+  tokenGenerator(identity).then((token) => {
+    res.send(token);
+  });
+  //res.send(tokenGenerator(identity));
 });
 
 router.post('/register', (req, res) => {
