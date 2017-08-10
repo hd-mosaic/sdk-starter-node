@@ -70,9 +70,54 @@ $(function() {
     + '<span class="me">' + username + '</span>', true);
 
     // Initialize the Chat client
-    chatClient = new Twilio.Chat.Client(data.token);
-    console.log('create client success');
-    chatClient.getSubscribedChannels().then(createOrJoinGeneralChannel);
+    let twClient = null;
+    Twilio.Chat.Client.create(data.token).then((client) => {
+      console.log('create client success: ', client);
+      twClient = client;
+
+      twClient.on('tokenExpired', (data) => {
+        console.log('tokenExpired: ', data);
+        twClient.updateToken(data.token);
+      });
+
+      twClient.on('userUpdated', (user) => {
+        console.log('client user updated: ', user.state);
+      });
+
+      twClient.getSubscribedUsers().then((users) => {
+        console.log('getSubscribedUsers: ', users);
+        let userIds = ['a', 'b', 'c'];
+        userIds.forEach((userId) => {
+          twClient.getUser(userId).then((user) => {
+            user.on('updated', (user) => {
+              console.log('subscribed user updated: ', user);
+            });
+          });
+        });
+      });
+
+      twClient.getSubscribedChannels().then((paginatorChannel)=> {
+        let channels = paginatorChannel.items;
+        console.log('getSubscribedChannels: ', channels);
+      });
+
+      return twClient.getChannelByUniqueName(channelId)
+    }).then((channel)=> {
+      if(channel) {
+        generalChannel = channel;
+        setupChannel();
+      } else {
+        twClient.createChannel({
+          uniqueName: channelId,
+          friendlyName: 'Custom Channel on Channel ' + channelId,
+          isPrivate: false
+        }).then((channel) => {
+          console.log('channel: ', channel);
+          generalChannel = channel;
+          setupChannel();
+        });
+      }
+    });
   });
 
   function createOrJoinGeneralChannel(paginator) {

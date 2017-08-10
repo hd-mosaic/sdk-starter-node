@@ -30,8 +30,8 @@ function tokenGenerator(identity = 0, cid) {
   // Assign the provided identity or generate a new one
   token.identity = identity || nameGenerator();
 
-  let cid = cid || (Date.now() % 5) + '';
-  twilioUtil.getService(cid).then((sid) => {
+  cid = cid || (Date.now() % 5) + '';
+  return twilioUtil.getService(cid).then((sid) => {
     if(sid) {
       return Q(sid);
     } else {

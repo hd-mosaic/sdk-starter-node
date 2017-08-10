@@ -3,7 +3,7 @@ const _ = require('lodash');
 const Q = require('q');
 const path = require('path');
 const config = {
-  'server' : 'server.js',
+  'service' : 'service.js',
   'channel': 'channel.js',
   'user': 'user.js'
 };

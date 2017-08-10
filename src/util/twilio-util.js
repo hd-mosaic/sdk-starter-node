@@ -3,7 +3,7 @@ const Q = require('q');
 const config = require('../config');
 const datasource = require('../../db');
 
-const SERVER_MODULE = 'server';
+const SERVER_MODULE = 'service';
 const USER_MODULE = 'user';
 const prefix = 'ChatService';
 
@@ -11,17 +11,24 @@ module.exports.getService = (cid) => {
   //var client = new Twilio(config.TWILIO_ACCOUNT_SID, config.TWILIO_AUTH_TOKEN);
   let servers = datasource.loader(SERVER_MODULE);
   let sid = servers[cid];
+  console.log('getService: ', sid);
   if(sid) {
     return Q(sid);
   } else {
-    return Q(null);
+    return this.createChatService(cid);
   }
 };
 
 module.exports.createChatService = (cid) => {
+  console.log('createChatService: ', cid);
   var client = new Twilio(config.TWILIO_ACCOUNT_SID, config.TWILIO_AUTH_TOKEN);
   return client.chat.services.create({
-    friendlyName: prefix + cid
+    friendlyName: prefix + cid,
+    reachabilityEnabled: true,
+    limits: {
+      userChannels: 1000,
+      channelMembers: 1000
+    }
   }).then(function(response) {
     console.log(response);
     let data = {};
@@ -49,7 +56,7 @@ module.exports.createUser = (pid, serverId) => {
   service.users.create({
     identity: pid
   }).then(function(response) {
-    console.log(response);
+    console.log('createUser: ', response);
     let data = {};
     data[pid] = response.sid;
     datasource.setter(USER_MODULE, data);

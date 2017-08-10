@@ -6,7 +6,7 @@ const config = require('./config');
 const twilioUtil = require('./util/twilio-util');
 const Twilio = require('twilio').Twilio;
 const datasource = require('../db');
-const SERVER_MODULE = 'server';
+const SERVER_MODULE = 'service';
 
 const router = new Router();
 
@@ -22,12 +22,14 @@ function camelCaseKeys(hashmap) {
 };
 
 router.get('/token', (req, res) => {
-  let pid = req.params.pid;
-  let cid = req.params.cid;
+  let pid = req.query.pid;
+  let cid = req.query.cid;
+  console.log('cid: ', cid);
+  console.log('pid: ', pid);
   let channelId = req.params.channelId;
   let serverId;
   let token;
-  tokenGenerator(pid).then((t) => {
+  tokenGenerator(pid, cid).then((t) => {
     token = t;
     return twilioUtil.getService(cid);
   }).then((sId) => {
